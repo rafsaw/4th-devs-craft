@@ -1,7 +1,13 @@
 import { writeFileSync, mkdirSync } from "fs";
 import { resolve } from "path";
+import {
+  redactSecrets,
+  compactImageFieldsInCopy,
+} from "../trace-logger.js";
 
 const OUTPUT_DIR = resolve("output");
+const GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/interactions";
 
 export const definition = {
   type: "function",
@@ -22,31 +28,60 @@ export const definition = {
   },
 };
 
-export const execute = async ({ prompt }) => {
+export const execute = async ({ prompt }, tracer) => {
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/interactions",
-    {
+  const body = {
+    model: "gemini-3.1-flash-image-preview",
+    input: prompt,
+    response_modalities: ["IMAGE"],
+  };
+  const headers = {
+    "Content-Type": "application/json",
+    "x-goog-api-key": process.env.GEMINI_API_KEY,
+  };
+
+  tracer?.record(
+    "integration.request",
+    redactSecrets({
+      service: "gemini",
+      operation: "interactions",
+      url: GEMINI_URL,
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": process.env.GEMINI_API_KEY,
-      },
-      body: JSON.stringify({
-        model: "gemini-3.1-flash-image-preview",
-        input: prompt,
-        response_modalities: ["IMAGE"],
-      }),
-    }
+      headers,
+      body,
+    })
   );
 
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Gemini API error (${res.status}): ${error}`);
+  const res = await fetch(GEMINI_URL, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  const responseText = await res.text();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    data = { parseError: true, raw: responseText };
   }
 
-  const data = await res.json();
+  tracer?.record("integration.response", {
+    service: "gemini",
+    operation: "interactions",
+    url: GEMINI_URL,
+    status: res.status,
+    ok: res.ok,
+    body: compactImageFieldsInCopy(data),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      `Gemini API error (${res.status}): ${responseText}`
+    );
+  }
+
   const image = data.outputs?.find((o) => o.type === "image");
 
   if (!image) {

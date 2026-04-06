@@ -4,7 +4,7 @@ A small Node.js agent that uses the [OpenAI Responses API](https://platform.open
 
 ## Requirements
 
-- **Node.js** 18 or newer (uses native `fetch` and ES modules)
+- **Node.js** 18 or newer (uses native `fetch` and ES modules). The run command below uses [`--env-file`](https://nodejs.org/api/cli.html#--env-fileconfig), which needs **Node.js 20.6+**; on older versions, set the same variables in your environment another way.
 
 The project uses ES module `import`/`export`. If running fails with a module error, add a `package.json` that includes `"type": "module"`.
 
@@ -25,10 +25,24 @@ The project uses ES module `import`/`export`. If running fails with a module err
 From the project root:
 
 ```bash
-node app.js
+node --env-file=.env app.js
 ```
 
-`app.js` sends a sample prompt to the agent. Edit the string in `app.js` to try other tasks.
+This reads API keys from `.env`.
+
+### Using the agent for research, images, or scraping
+
+There is no separate CLI flag. You **edit the prompt string** in `app.js` (the argument to `agent(...)`) and run the same command again. The model reads your request and decides which tools to call (`web_search`, `scrape_url`, `generate_image`, or `sum`).
+
+| Goal | Also set in `.env` | What to ask (examples) |
+|------|-------------------|------------------------|
+| **Research** (find and synthesize info from the web) | `FIRECRAWL_API_KEY` | `"Research the latest EU AI Act implementation timeline and summarize with bullet points."` — `"Compare three reviews of [product]: search the web, then give a short verdict."` |
+| **Generate an image** | `GEMINI_API_KEY` | `"Generate an image: a minimal flat vector app icon for a note-taking app, soft blue and white."` — `"Create a wide landscape illustration of a coastal town at sunset, no text."` |
+| **Scrape pages** (read specific URLs as markdown) | `FIRECRAWL_API_KEY` | `"Scrape https://example.com/docs and summarize the installation steps."` — `"Fetch https://… and https://…, then compare the pricing sections."` |
+
+**`OPENAI_API_KEY`** is required for every run (the orchestration model). If a tool’s key is missing, that tool’s API call will fail when the model tries to use it—set the keys for the capabilities you want.
+
+Saved images from `generate_image` appear under the `output/` directory (see `tools/generate_image.js`).
 
 ## How it works
 
