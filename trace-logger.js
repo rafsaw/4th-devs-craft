@@ -11,8 +11,8 @@
  * Event types by layer:
  *   app.*           — startup, shutdown, session lifecycle
  *   agent.*         — orchestration loop (step start, tool dispatch, final answer)
- *   llm.request     — outgoing LLM API call (model, input size, tools)
- *   llm.response    — LLM response (tokens, tool calls, text)
+ *   llm.request     — outgoing LLM API call (model, input, toolCount — not full tools list)
+ *   llm.response    — LLM HTTP result; body trimmed to output (+ error if any) plus _traceNote
  *   llm.error       — LLM API failure
  *   vision.request  — outgoing vision API call
  *   vision.response — vision result

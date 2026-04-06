@@ -14,4 +14,16 @@ export const definition = {
     },
   };
   
-export const execute = ({ a, b }, _tracer) => a + b;
+export const execute = async ({ a, b }, tracer) => {
+    tracer?.record("sum.tool.execute", {
+        tool: "sum",
+        arguments: { a, b },
+    });
+    const result = await a + b;
+    tracer?.record("sum.tool.result", {
+        tool: "sum",
+        arguments: { a, b },
+        result,
+    });
+    return result;
+};

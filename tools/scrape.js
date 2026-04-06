@@ -32,7 +32,7 @@ export const execute = async ({ url }, tracer) => {
   };
 
   tracer?.record(
-    "integration.request",
+    "Tool.request",
     redactSecrets({
       service: "firecrawl",
       operation: "scrape",
@@ -57,7 +57,7 @@ export const execute = async ({ url }, tracer) => {
     parsed = { parseError: true, raw: responseText };
   }
 
-  tracer?.record("integration.response", {
+  tracer?.record("tool.result", {
     service: "firecrawl",
     operation: "scrape",
     url: requestUrl,

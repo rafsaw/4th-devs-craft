@@ -64,10 +64,11 @@ async function execute(calls, history, tracer) {
       throw err;
     }
 
-    tracer?.record("tool.start", {
+    tracer?.record("tool.execute", {
       tool: call.name,
       call_id: call.call_id,
       arguments: args,
+      notes: "Tool picked by matching the name of the tool to the name of the function call in the LLM response",
     });
 
     console.log(args);
